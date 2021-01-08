@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>WASM test</title>
+    <style>
+        * {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            text-align: center;
+            font-family: monospace;
+            font-size: 1.2em;
+            line-height: .6;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+<textarea name="text" id="text" cols="10" rows="10"></textarea>
+<script src="https://cdn.jsdelivr.net/npm/@assemblyscript/loader/umd/index.js"></script>
+<script>
+	loader.instantiate(fetch('build/optimized.wasm'), {
+		env: {
+			abort: (_msg, _file, line, column) => console.error("abort called at main.ts:" + line + ":" + column),
+			seed: Math.random,
+		},
+	}).then((wasmModule) => {
+		const snakeModule = wasmModule.exports;
+		let snake = new snakeModule.Snake();
+
+		snake.init(50, 50);
+
+		function draw() {
+			snake.tick();
+			let p = snake.text;
+			document.getElementById("text").innerHTML = snakeModule.__getString(p);
+			snakeModule.__release(p);
+		}
+
+		setInterval(draw, 1000 / 10);
+		document.addEventListener('keydown', (e) => [37, 38, 39, 40].find(a => a === e.keyCode) ? snake.setDirection(e.keyCode - 37) : null);
+	});
+</script>
+</body>
+</html>
